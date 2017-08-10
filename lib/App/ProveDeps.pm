@@ -111,7 +111,7 @@ To use this utility, first create `~/.config/prove-deps.conf`:
     dist_dirs = ~/repos
     dist_dirs = ~/repos-other
 
-The above tells *prove-deps* where to find for Perl distributions. Then:
+The above tells *prove-deps* where to look for Perl distributions. Then:
 
     % prove-deps Log::ger
 
