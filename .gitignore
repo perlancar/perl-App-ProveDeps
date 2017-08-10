@@ -1,4 +1,4 @@
-App-ProveDependents-*
+App-ProveDeps-*
 .build
 *~
 nytprof*
