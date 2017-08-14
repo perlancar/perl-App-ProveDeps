@@ -207,10 +207,10 @@ sub prove_deps {
     for my $rec (@{ $res->[2] }) {
         $i++;
         if (defined $args{phases} && @{ $args{phases} }) {
-            next REC unless grep $rec->{phase} eq $_, @{ $args{phases} };
+            next REC unless grep {$rec->{phase} eq $_} @{ $args{phases} };
         }
         if (defined $args{rel} && @{ $args{rel} }) {
-            next REC unless grep $rec->{rel} eq $_, @{ $args{rel} };
+            next REC unless grep {$rec->{rel} eq $_} @{ $args{rel} };
         }
         log_info "Found dep: %s (%s %s)", $rec->{dist}, $rec->{phase}, $rec->{rel};
 
