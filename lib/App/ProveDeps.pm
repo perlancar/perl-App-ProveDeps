@@ -248,14 +248,15 @@ sub prove_deps {
             } else {
                 log_error "Test for dist '%s' failed: %s",
                     $rec->{dist}, $pres->[1];
-                push @fails, {dist=>$rec->{dist}, reason=>$pres->[1]};
+                push @fails, {dist=>$rec->{dist}, status=>500, reason=>$pres->[1]};
             }
         }
     }
 
     [
-        @{@fails == 0 ? [200, "All succeeded"] : @fails == @{$res} ? [500, "All failed"] : [500, "Some failed"]},
-        \@fails
+        @{@fails == 0 ? [200, "All succeeded"] : @fails == @{$res} ? [200, "All failed"] : [200, "Some failed"]},
+        \@fails,
+        {'cmdline.exit_code' => @fails ? 1:0},
     ];
 }
 
