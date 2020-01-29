@@ -214,14 +214,14 @@ _
             summary => 'Distributions to skip',
             'x.name.is_plural' => 1,
             'x.name.singular' => 'rel',
-            schema => ['array*', of=>'perl::distname*'],
+            schema => ['array*', of=>'perl::distname*', 'x.perl.coerce_rules'=>["From_str::comma_sep"]],
             tags => ['category:filtering'],
         },
         include_dists => {
             summary => 'If specified, only include these distributions',
             'x.name.is_plural' => 1,
             'x.name.singular' => 'rel',
-            schema => ['array*', of=>'perl::distname*'],
+            schema => ['array*', of=>'perl::distname*', 'x.perl.coerce_rules'=>["From_str::comma_sep"]],
             tags => ['category:filtering'],
         },
         exclude_dist_pattern => {
@@ -259,17 +259,28 @@ sub prove_deps {
         unless $res->[0] == 200;
 
     my @fails;
-    my $i = 0;
+    my @included_recs;
   REC:
     for my $rec (@{ $res->[2] }) {
-        $i++;
+        log_info "Found dep: %s (%s %s)", $rec->{dist}, $rec->{phase}, $rec->{rel};
         if (defined $args{phases} && @{ $args{phases} }) {
-            next REC unless grep {$rec->{phase} eq $_} @{ $args{phases} };
+            do { log_info "Dep %s skipped (phase not included)", $rec->{dist}; next REC } unless grep {$rec->{phase} eq $_} @{ $args{phases} };
         }
         if (defined $args{rel} && @{ $args{rel} }) {
-            next REC unless grep {$rec->{rel} eq $_} @{ $args{rel} };
+            do { log_info "Dep %s skipped (rel not included)", $rec->{dist}; next REC } unless grep {$rec->{rel} eq $_} @{ $args{rel} };
         }
-        log_info "Found dep: %s (%s %s)", $rec->{dist}, $rec->{phase}, $rec->{rel};
+        if (defined $args{include_dists} && @{ $args{include_dists} }) {
+            do { log_info "Dep %s skipped (not in include_dists)", $rec->{dist}; next REC } unless grep {$rec->{dist} eq $_} @{ $args{include_dists} };
+        }
+        if (defined $args{include_dist_pattern}) {
+            do { log_info "Dep %s skipped (does not match include_dist_pattern)", $rec->{dist}; next REC } unless $rec->{dist} =~ /$args{include_dist_pattern}/;
+        }
+        if (defined $args{exclude_dists} && @{ $args{exclude_dists} }) {
+            do { log_info "Dep %s skipped (in exclude_dists)", $rec->{dist}; next REC } if grep {$rec->{dist} eq $_} @{ $args{exclude_dists} };
+        }
+        if (defined $args{exclude_dist_pattern}) {
+            do { log_info "Dep %s skipped (matches exclude_dist_pattern)", $rec->{dist}; next REC } if $rec->{dist} =~ /$args{exclude_dist_pattern}/;
+        }
 
         my $dir;
         {
@@ -278,30 +289,38 @@ sub prove_deps {
             unless ($arg_download) {
                 log_error "Can't find dir for dist '%s', skipped", $rec->{dist};
                 push @fails, {dist=>$rec->{dist}, status=>412, reason=>"Can't find dist dir"};
-                next REC;
+                next REC2;
             }
             my $dlres = _download_dist($rec->{dist});
             unless ($dlres->[0] == 200) {
                 log_error "Can't download/extract dist '%s' from local CPAN mirror: %s - %s",
                     $rec->{dist}, $dlres->[0], $dlres->[1];
                 push @fails, {dist=>$rec->{dist}, status=>$dlres->[0], reason=>"Can't download/extract: $dlres->[1]"};
-                next REC;
+                next REC2;
             }
             $dir = $dlres->[2];
         }
 
+        $rec->{dir} = $dir;
+        push @included_recs, $rec;
+    }
+
+    my $i = 0;
+  REC2:
+    for my $rec (@included_recs) {
+        $i++;
         if ($args{-dry_run}) {
             log_info("[DRY] [%d/%d] Running prove for dist '%s' in '%s' ...",
-                     $i, scalar(@{ $res->[2] }),
-                     $rec->{dist}, $dir);
-            next REC;
+                     $i, scalar(@included_recs),
+                     $rec->{dist}, $rec->{dir});
+            next REC2;
         }
 
         {
-            local $CWD = $dir;
+            local $CWD = $rec->{dir};
             log_warn("[%d/%d] Running prove for dist '%s' in '%s' ...",
-                     $i, scalar(@{ $res->[2] }),
-                     $rec->{dist}, $dir);
+                     $i, scalar(@included_recs),
+                     $rec->{dist}, $rec->{dir});
             my $pres = _prove($args{prove_opts});
             log_debug("Prove result: %s", $pres);
             if ($pres->[0] == 200) {
