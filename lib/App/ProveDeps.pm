@@ -11,6 +11,7 @@ use warnings;
 use Log::ger;
 
 use File::chdir;
+use File::Temp qw(tempdir);
 
 our %SPEC;
 
@@ -54,6 +55,29 @@ sub _find_dist_dir {
         }
     }
     undef;
+}
+
+# return directory
+sub _download_dist {
+    my ($dist) = @_;
+    require App::lcpan::Call;
+
+    my $tempdir = tempdir(CLEANUP=>1);
+
+    local $CWD = $tempdir;
+
+    my $res = App::lcpan::Call::call_lcpan_script(
+        argv => ['extract-dist', $dist],
+    );
+
+    return [412, "Can't lcpan extract-dist: $res->[0] - $res->[1]"]
+        unless $res->[0] == 200;
+
+    my @dirs = <*>;
+    return [412, "Can't find extracted dist (found ".join(", ", @dirs).")"]
+        unless @dirs == 1 && (-d $dirs[0]);
+
+    [200, "OK", "$tempdir/$dirs[0]"];
 }
 
 sub _prove {
@@ -125,11 +149,25 @@ How distribution directory is searched: first, the exact name (`My-Perl-Dist`)
 is searched. If not found, then the name with different case (e.g.
 `my-perl-dist`) is searched. If not found, a suffix match (e.g.
 `p5-My-Perl-Dist` or `cpan-My-Perl-Dist`) is searched. If not found, a prefix
-match (e.g. `My-Perl-Dist-perl`) is searched. If not found, `prove-deps` croaks.
+match (e.g. `My-Perl-Dist-perl`) is searched.
+
+If not found, when `--download` option is set to true, `prove-deps` will try to
+download the distribution tarball from local CPAN mirror and extract it to a
+temporary directory.
+
+When a dependent distribution cannot be found or downloaded/extracted, this
+counts as a 412 error (Precondition Failed).
+
+When a distribution's test fails, this counts as a 500 error (Error). Otherwise,
+the status is 200 (OK).
+
+`prove-deps` will return status 200 (OK) with the status of each dist. It will
+exit 0 if all distros are successful, otherwise it will exit 1.
 
 _
     args => {
         modules => {
+            summary => 'Module names to find dependents of',
             'x.name.is_plural' => 1,
             'x.name.singular' => 'module',
             schema => ['array*', of=>'perl::modname*'],
@@ -138,6 +176,7 @@ _
             greedy => 1,
         },
         prove_opts => {
+            summary => 'Options to pass to the prove command',
             'x.name.is_plural' => 1,
             'x.name.singular' => 'prove_opt',
             schema => ['array*', of=>'str*'],
@@ -149,6 +188,11 @@ _
             'x.name.singular' => 'dist_dir',
             schema => ['array*', of=>'dirname*'],
             req => 1,
+        },
+        download => {
+            summary => 'Whether to try download/extract distribution from local CPAN mirror (when not found in dist_dirs)',
+            schema => 'bool*',
+            default => 1,
         },
 
         phases => {
@@ -167,22 +211,26 @@ _
         },
 
         exclude_dists => {
+            summary => 'Distributions to skip',
             'x.name.is_plural' => 1,
             'x.name.singular' => 'rel',
             schema => ['array*', of=>'perl::distname*'],
             tags => ['category:filtering'],
         },
         include_dists => {
+            summary => 'If specified, only include these distributions',
             'x.name.is_plural' => 1,
             'x.name.singular' => 'rel',
             schema => ['array*', of=>'perl::distname*'],
             tags => ['category:filtering'],
         },
         exclude_dist_pattern => {
+            summary => 'Distribution name pattern to skip',
             schema => 're*',
             tags => ['category:filtering'],
         },
         include_dist_pattern => {
+            summary => 'If specified, only include distributions with this pattern',
             schema => 're*',
             tags => ['category:filtering'],
         },
@@ -201,6 +249,7 @@ sub prove_deps {
     require App::lcpan::Call;
 
     my %args = @_;
+    my $arg_download = $args{download} // 1;
 
     my $res = App::lcpan::Call::call_lcpan_script(
         argv => ['rdeps', @{ $args{modules} }],
@@ -222,11 +271,23 @@ sub prove_deps {
         }
         log_info "Found dep: %s (%s %s)", $rec->{dist}, $rec->{phase}, $rec->{rel};
 
-        my $dir = _find_dist_dir($rec->{dist}, $args{dist_dirs});
-        unless (defined $dir) {
-            log_error "Can't find dir for dist '%s', skipped", $rec->{dist};
-            push @fails, {dist=>$rec->{dist}, reason=>"Can't find dist dir"};
-            next REC;
+        my $dir;
+        {
+            $dir = _find_dist_dir($rec->{dist}, $args{dist_dirs});
+            last if defined $dir;
+            unless ($arg_download) {
+                log_error "Can't find dir for dist '%s', skipped", $rec->{dist};
+                push @fails, {dist=>$rec->{dist}, status=>412, reason=>"Can't find dist dir"};
+                next REC;
+            }
+            my $dlres = _download_dist($rec->{dist});
+            unless ($dlres->[0] == 200) {
+                log_error "Can't download/extract dist '%s' from local CPAN mirror: %s - %s",
+                    $rec->{dist}, $dlres->[0], $dlres->[1];
+                push @fails, {dist=>$rec->{dist}, status=>$dlres->[0], reason=>"Can't download/extract: $dlres->[1]"};
+                next REC;
+            }
+            $dir = $dlres->[2];
         }
 
         if ($args{-dry_run}) {
@@ -266,11 +327,6 @@ sub prove_deps {
 =head1 SYNOPSIS
 
 See the included script L<prove-deps>.
-
-
-=head1 TODO
-
-Download distributions.
 
 
 =head1 SEE ALSO
