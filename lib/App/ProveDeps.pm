@@ -254,7 +254,7 @@ sub prove_deps {
     }
 
     [
-        @{@fails == 0 ? [200, "All succeeded"] : @fails == @{$res} ? [500, "All failed"] : [200, "Some failed"]},
+        @{@fails == 0 ? [200, "All succeeded"] : @fails == @{$res} ? [500, "All failed"] : [500, "Some failed"]},
         \@fails
     ];
 }
