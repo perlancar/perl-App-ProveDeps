@@ -1,6 +1,8 @@
 package App::ProveDeps;
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -118,6 +120,12 @@ The above tells *prove-deps* where to look for Perl distributions. Then:
 This will search local CPAN mirror for all distributions that depend on
 <pm:Log::ger> then search the distributions in the distribution directories,
 `cd` to each and run `prove` in it.
+
+How distribution directory is searched: first, the exact name (`My-Perl-Dist`)
+is searched. If not found, then the name with different case (e.g.
+`my-perl-dist`) is searched. If not found, a suffix match (e.g.
+`p5-My-Perl-Dist` or `cpan-My-Perl-Dist`) is searched. If not found, a prefix
+match (e.g. `My-Perl-Dist-perl`) is searched. If not found, `prove-deps` croaks.
 
 _
     args => {
