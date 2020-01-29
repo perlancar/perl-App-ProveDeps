@@ -1,3 +1,9 @@
+0.003   2020-01-29  Released-By: PERLANCAR; Urgency: medium
+
+	- [Incompatible change] Return 412 status instead of 500 when we
+	  can't use lcpan.
+
+
 0.002   2020-01-29  Released-By: PERLANCAR; Urgency: medium
 
 	- [Incompatible change] Return 500 status instead of 200 if some
