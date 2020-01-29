@@ -206,7 +206,7 @@ sub prove_deps {
         argv => ['rdeps', @{ $args{modules} }],
     );
 
-    return [500, "Can't lcpan rdeps: $res->[0] - $res->[1]"]
+    return [412, "Can't lcpan rdeps: $res->[0] - $res->[1]"]
         unless $res->[0] == 200;
 
     my @fails;
