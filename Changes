@@ -1,3 +1,11 @@
+0.002   2020-01-29  Released-By: PERLANCAR; Urgency: medium
+
+	- [Incompatible change] Return 500 status instead of 200 if some
+	  dists fail.
+
+	- [doc] Document how distro dir is searched.
+
+
 0.001   2017-08-14  Released-By: PERLANCAR
 
         - First release.
