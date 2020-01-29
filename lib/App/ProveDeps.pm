@@ -73,7 +73,7 @@ sub _download_dist {
     return [412, "Can't lcpan extract-dist: $res->[0] - $res->[1]"]
         unless $res->[0] == 200;
 
-    my @dirs = <*>;
+    my @dirs = glob "*";
     return [412, "Can't find extracted dist (found ".join(", ", @dirs).")"]
         unless @dirs == 1 && (-d $dirs[0]);
 
