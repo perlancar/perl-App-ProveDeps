@@ -171,7 +171,7 @@ The above example shows that I have the distribution directories locally on my
 temporary directories.
 
 If we reinvoke the above command without the `-n`, `prove-deps` will actually
-run `prove` on each directory. Example output:
+run `prove` on each directory and provide a summary at the end. Example output:
 
     % prove-deps Regexp::Pattern
     ...
