@@ -200,6 +200,7 @@ _
             'x.name.is_plural' => 1,
             'x.name.singular' => 'phase',
             schema => ['array*', of=>'str*'],
+            default => ['runtime'],
             tags => ['category:filtering'],
         },
         rels => {
@@ -207,20 +208,21 @@ _
             'x.name.is_plural' => 1,
             'x.name.singular' => 'rel',
             schema => ['array*', of=>'str*'],
+            default => ['requires'],
             tags => ['category:filtering'],
         },
 
         exclude_dists => {
             summary => 'Distributions to skip',
             'x.name.is_plural' => 1,
-            'x.name.singular' => 'rel',
+            'x.name.singular' => 'exclude_dist',
             schema => ['array*', of=>'perl::distname*', 'x.perl.coerce_rules'=>["From_str::comma_sep"]],
             tags => ['category:filtering'],
         },
         include_dists => {
             summary => 'If specified, only include these distributions',
             'x.name.is_plural' => 1,
-            'x.name.singular' => 'rel',
+            'x.name.singular' => 'include_dist',
             schema => ['array*', of=>'perl::distname*', 'x.perl.coerce_rules'=>["From_str::comma_sep"]],
             tags => ['category:filtering'],
         },
