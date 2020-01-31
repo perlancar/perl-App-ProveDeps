@@ -200,7 +200,7 @@ is searched. If not found, then the name with different case (e.g.
 `p5-My-Perl-Dist` or `cpan-My-Perl-Dist`) is searched. If not found, a prefix
 match (e.g. `My-Perl-Dist-perl`) is searched. If not found, *prove-rdeps* will
 try to download the distribution tarball from local CPAN mirror and extract it
-to a temporary directory. If `--no-dowload` is given, the *prove-deps* will not
+to a temporary directory. If `--no-dowload` is given, the *prove-rdeps* will not
 download from local CPAN mirror and give up for that distribution.
 
 When a dependent distribution cannot be found or downloaded/extracted, this
@@ -209,7 +209,7 @@ counts as a 412 error (Precondition Failed).
 When a distribution's test fails, this counts as a 500 error (Error). Otherwise,
 the status is 200 (OK).
 
-*prove-deps* will return status 200 (OK) with the status of each dist. It will
+*prove-rdeps* will return status 200 (OK) with the status of each dist. It will
 exit 0 if all distros are successful, otherwise it will exit 1.
 
 _
