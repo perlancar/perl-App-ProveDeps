@@ -195,6 +195,7 @@ sub prove_rdeps {
 
     App::ProveDists::prove_dists(
         hash_subset(\%args, \%App::ProveDists::args_common),
+        -dry_run => $args{-dry_run},
         _res => [200, "OK", \@included_recs],
     );
 }
