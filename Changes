@@ -1,3 +1,11 @@
+0.008   2020-03-06  Released-By: PERLANCAR; Urgency: medium
+
+	- [incompatible change] Rename argument dist_dirs to dists_dirs.
+
+	- Refactor/extract functionalities to App::ProveDirs and
+	  App::ProveDists.
+
+
 0.007   2020-01-31  Released-By: PERLANCAR; Urgency: low
 
 	- No functional changes.
