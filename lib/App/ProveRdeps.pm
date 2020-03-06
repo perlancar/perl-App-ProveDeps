@@ -134,8 +134,8 @@ $SPEC{prove_rdeps} = {
 
 To use this utility, first create `~/.config/prove-rdeps.conf`:
 
-    dist_dirs = ~/repos
-    dist_dirs = ~/repos-other
+    dists_dirs = ~/repos
+    dists_dirs = ~/repos-other
 
 The above tells *prove-rdeps* where to look for Perl distributions. Then:
 
@@ -230,15 +230,15 @@ _
             schema => ['array*', of=>'str*'],
             default => ['-l'],
         },
-        dist_dirs => {
-            summary => 'Where to find the distributions',
+        dists_dirs => {
+            summary => 'Where to find the distributions directories',
             'x.name.is_plural' => 1,
-            'x.name.singular' => 'dist_dir',
+            'x.name.singular' => 'dists_dir',
             schema => ['array*', of=>'dirname*'],
             req => 1,
         },
         download => {
-            summary => 'Whether to try download/extract distribution from local CPAN mirror (when not found in dist_dirs)',
+            summary => 'Whether to try download/extract distribution from local CPAN mirror (when not found in dists_dirs)',
             schema => 'bool*',
             default => 1,
         },
@@ -334,7 +334,7 @@ sub prove_rdeps {
 
         my $dir;
         {
-            $dir = _find_dist_dir($rec->{dist}, $args{dist_dirs});
+            $dir = _find_dist_dir($rec->{dist}, $args{dists_dirs});
             last if defined $dir;
             unless ($arg_download) {
                 log_error "Can't find dir for dist '%s', skipped", $rec->{dist};
